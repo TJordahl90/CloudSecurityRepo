@@ -1,0 +1,13 @@
+import subprocess
+import docker
+
+def block_ip(ip):
+    subprocess.run(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+
+def restart_container(name):
+    client = docker.from_env()
+    container = client.containers.get(name)
+    container.restart()
+
+def cleanup_disk(path="/tmp"):
+    subprocess.run(["sudo", "rm", "-rf", f"{path}/*"])
