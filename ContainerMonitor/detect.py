@@ -7,7 +7,7 @@ import psutil
 from mitigate import block_ip, restart_container
 from Log.logger import log_event
 
-def monitor_udp(interface):
+def monitor_udp(interface, containerIP):
     capture = pyshark.LiveCapture(interface=interface)
     sources = []
     capture.sniff(packet_count=20)
