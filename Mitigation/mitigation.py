@@ -1,8 +1,11 @@
 import subprocess
 import docker
 
-def block_ip(ip):
-    subprocess.run(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+def block_ip(ip, interface=None):
+    if interface:
+        subprocess.run(["sudo", "iptables", "-A", "INPUT", "-i", interface, "-s", ip, "-j", "DROP"])
+    else:
+        subprocess.run(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
 
 def restart_container(name):
     client = docker.from_env()

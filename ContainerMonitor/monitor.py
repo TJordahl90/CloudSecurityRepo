@@ -10,10 +10,11 @@ from dotenv import load_dotenv
 def main():
     load_dotenv()
     init_db()
-    interface = os.getenv("NETWORK_INTERFACE")
+    #interface = os.getenv("NETWORK_INTERFACE")
+    interface = 'docker0'
     container_name = os.getenv("CONTAINER_NAME")
     containerIP = os.getenv('CONTAINER_IP')
-    thread_and_run(container_name, containerIP)
+    thread_and_run(interface, container_name, containerIP)
 
 if __name__ == "__main__":
     main()
