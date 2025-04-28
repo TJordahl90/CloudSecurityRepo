@@ -7,6 +7,8 @@ import psutil
 from mitigation import block_ip, restart_container
 from Log.logger import log_event
 from collections import Counter
+import docker
+import time
 
 def monitor_udp(interface, containerIP):
     capture = pyshark.LiveCapture(interface=interface, display_filter = 'udp')
@@ -32,14 +34,33 @@ def monitor_udp(interface, containerIP):
 
 
 def monitor_cpu(container_name):
+    client = docker.from_env()
+    container = client.containers.get(container_name)
+
     while True:
-        usage = psutil.cpu_percent(interval=5)
-        log_event("CPU", f"CPU usage: {usage}%")
-        print("CPU", f"CPU usage: {usage}%")
-        if usage > 90:
+        stats = container.stats(stream=False)
+        cpuDelta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
+        systemDelta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
+        print(f'Cpu Delta: {cpuDelta}')
+        print(f'System Delta: {systemDelta}')
+
+        perCPU = stats["cpu_stats"]["cpu_usage"].get("percpu_usage", None)
+
+        if systemDelta > 0:
+            perCPU = stats["cpu_stats"]["cpu_usage"].get("percpu_usage", [])
+            cpu_count = len(perCPU) if perCPU else 1
+
+            cpuUsage = (cpuDelta / systemDelta) * cpu_count * 100.0
+        else:
+            cpuUsage = 0
+
+        print(f'Cpu Usage: {cpuUsage}')
+
+        if cpuUsage > 90:
             print("Mitigation", "CPU usage exceeded 90%")
             log_event("Mitigation", "CPU usage exceeded 90%")
             restart_container(container_name)
+        time.sleep(5)
 
 def thread_and_run(interface, container_name, containerIP):
     global lock
