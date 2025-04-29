@@ -12,6 +12,7 @@ from collections import Counter
 def monitor_icmp(interface):
     capture = pyshark.LiveCapture(interface=interface)
     hostIP = '192.168.50.220' # Dont want to block host ip
+    sources = Counter()
 #    capture.sniff(packet_count=20)
     blockedIPs = set() # Dont want duplicates for efficiency
 
@@ -28,7 +29,7 @@ def monitor_icmp(interface):
 
             with lock: # Lock mutex
                 if sources[ip] >= 5:
-                    log_event("Mitigation", f"ICMP flood from {ip}")
+                    log_event('VMMonitorDB', "Mitigation", f"ICMP flood from {ip}")
 #                    print("Mitigation", f"ICMP flood from {ip}") # For testing
                     if(ip not in blockedIPs): # If the ip is already blocked we do not need to block it again
                         block_ip(ip)
@@ -36,26 +37,24 @@ def monitor_icmp(interface):
 
 def monitor_disk():
     while(True):
-        time.sleep(10)
-        usage = psutil.disk_usage('/')
-        log_event("Disk", f"Disk usage: {usage.percent}%")
-        print(f"Disk usage: {usage.percent}%")
-        if usage.percent > 95:
-            log_event("Mitigation", "Disk usage exceeded 95%")
-            print("Mitigation", "Disk usage exceeded 95%")
-            cleanup_disk("/tmp")
+        time.sleep(10) # Sleep
+        usage = psutil.disk_usage('/') # Check for disk usage from /
+        log_event('VMMonitorDB', "Disk", f"Disk usage: {usage.percent}%") # Log disk usage
+        #print(f"Disk usage: {usage.percent}%")
+        if usage.percent > 95: # If the disk usage is unusually high
+            log_event('VMMonitorDB', "Mitigation", "Disk usage exceeded 95%") # Log it
+            #print("Mitigation", "Disk usage exceeded 95%")
+            cleanup_disk("/tmp") # Clean temp file
 
 def thread_and_run(interface):
-    global lock
+    global lock # Create a global mutex lock
     lock = threading.Lock()
-    global sources
-    sources = Counter()
 
+    # Thread the application
     icmpThread = threading.Thread(target=monitor_icmp, args=(interface,))
     diskThread = threading.Thread(target=monitor_disk)
-    icmpThread.start()
+    #icmpThread.start()
     diskThread.start()
 
-    icmpThread.join()
+    #icmpThread.join()
     diskThread.join()
-    #monitor_disk()

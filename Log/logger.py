@@ -1,8 +1,8 @@
 import sqlite3
 from datetime import datetime
 
-def init_db():
-    conn = sqlite3.connect("monitoring.db")
+def init_db(name):
+    conn = sqlite3.connect(name)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS events (
@@ -15,8 +15,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-def log_event(event_type, message):
-    conn = sqlite3.connect("monitoring.db")
+def log_event(name, event_type, message):
+    conn = sqlite3.connect(name)
     c = conn.cursor()
     c.execute("INSERT INTO events (timestamp, event_type, message) VALUES (?, ?, ?)",
               (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), event_type, message))

@@ -8,10 +8,10 @@ import os
 from dotenv import load_dotenv
 
 def main():
-    load_dotenv()
-    init_db()
-    interface = os.getenv("NETWORK_INTERFACE")
-    thread_and_run(interface)
+    load_dotenv() # Load .env variables
+    init_db('VMMonitorDB') # Create database if necessary
+    interface = os.getenv("NETWORK_INTERFACE") # Get network interface
+    thread_and_run(interface) # Run the VM Monitoring function
     
 
 if __name__ == "__main__":
