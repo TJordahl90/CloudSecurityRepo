@@ -26,7 +26,7 @@ def monitor_icmp(interface):
 
             with lock: # Lock the mutex to avoid race conditions
                 sources[ip] += 1
-
+                log_event('VMMonitorDB', "ICMP Packet", f"Received from {ip}") # Log event
                 if sources[ip] >= 1000 and ip not in blockedIPs:
                     log_event('VMMonitorDB', "Mitigation", f"ICMP flood from {ip}")
                     print("Mitigation", f"ICMP flood from {ip}") # For testing
