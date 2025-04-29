@@ -25,9 +25,9 @@ def monitor_udp(interface, containerIP):
                     sources[ip] += 1
                     #print("UDP Packet", f"Received from {ip}")
                     log_event('ContainerDB', "UDP Packet", f"Received from {ip}") # Log event
-                if(sources[ip] > 5 and ip not in blockedIPs):
+                if(sources[ip] > 1000 and ip not in blockedIPs):
                     with lock:
-                        #print("Mitigation", f"UDP flood from {ip}")
+                        print("Mitigation", f"UDP flood from {ip}")
                         log_event('ContainerDB', "Mitigation", f"UDP flood from {ip}") # Log event
                         block_ip(ip, interface) # Block the IP
                         blockedIPs.add(ip) # Add the newly blocked IP to the blockedIPs set
@@ -43,28 +43,25 @@ def monitor_cpu(container_name):
         # Calculate CPU usage from the system and container
         cpuDelta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
         systemDelta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
-        
+        perCPU = stats["cpu_stats"]["cpu_usage"].get("percpu_usage", None) # Get CPU stats
+
         print(f'Cpu Delta: {cpuDelta}')
         print(f'System Delta: {systemDelta}')
-
-        perCPU = stats["cpu_stats"]["cpu_usage"].get("percpu_usage", None) # Get CPU stats
 
         # Calculate cpu usage statsa
         if systemDelta > 0:
             perCPU = stats["cpu_stats"]["cpu_usage"].get("percpu_usage", [])
             cpu_count = len(perCPU) if perCPU else 1
-
             cpuUsage = (cpuDelta / systemDelta) * cpu_count * 100.0
         else:
             cpuUsage = 0
 
         print(f'Cpu Usage: {cpuUsage}')
 
-        if cpuUsage > 90:
-            print("Mitigation", "CPU usage exceeded 90%")
-            log_event('ContainerDB', "Mitigation", "CPU usage exceeded 90%") # Log event
+        if cpuUsage > 89: # If very high CPU usage
+            print("Mitigation", "CPU usage exceeded 89%")
+            log_event('ContainerDB', "Mitigation", "CPU usage exceeded 89%") # Log event
             restart_container(container_name) # Restart the container
-        time.sleep(5)
 
 def thread_and_run(interface, container_name, containerIP):
     global lock # Create a global mutex lock
@@ -76,6 +73,10 @@ def thread_and_run(interface, container_name, containerIP):
 
     udpThread.start()
     cpuThread.start()
-    
-    udpThread.join()
-    cpuThread.join()
+
+    try:
+        udpThread.join()
+        cpuThread.join()
+    except KeyboardInterrupt:
+        print('\nExiting main thread, program killed')
+        sys.exit(0)

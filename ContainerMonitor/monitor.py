@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 def main():
     load_dotenv()
-    init_db()
+    init_db('ContainerDB')
     #interface = os.getenv("NETWORK_INTERFACE")
     interface = 'docker0'
     container_name = os.getenv("CONTAINER_NAME")

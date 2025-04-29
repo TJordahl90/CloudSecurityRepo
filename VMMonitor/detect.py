@@ -22,24 +22,23 @@ def monitor_icmp(interface):
             if(ip == hostIP): # Skip if the src is the host machine we dont care about outgoing pings
                 continue
 
+            #print("ICMP Packet", f"Received from {ip}") # For testing purposes
+
             with lock: # Lock the mutex to avoid race conditions
                 sources[ip] += 1
 
-#            print("ICMP Packet", f"Received from {ip}") # For testing purposes
-
-            with lock: # Lock mutex
-                if sources[ip] >= 5:
+                if sources[ip] >= 1000 and ip not in blockedIPs:
                     log_event('VMMonitorDB', "Mitigation", f"ICMP flood from {ip}")
-#                    print("Mitigation", f"ICMP flood from {ip}") # For testing
-                    if(ip not in blockedIPs): # If the ip is already blocked we do not need to block it again
-                        block_ip(ip)
-                        blockedIPs.add(ip) # Add newly blocked ips to the set if needed
+                    print("Mitigation", f"ICMP flood from {ip}") # For testing
+
+                    block_ip(ip)
+                    blockedIPs.add(ip) # Add newly blocked ips to the set if needed
 
 def monitor_disk():
     while(True):
         time.sleep(10) # Sleep
-        usage = psutil.disk_usage('/tmp') # Check for disk usage from /
-        
+        usage = psutil.disk_usage('/tmp') # Check for disk usage from /tmp
+
         log_event('VMMonitorDB', "Disk", f"Disk usage: {usage.percent}%") # Log disk usage
         print(f"Disk usage: {usage.percent}%")
 
@@ -55,8 +54,12 @@ def thread_and_run(interface):
     # Thread the application
     icmpThread = threading.Thread(target=monitor_icmp, args=(interface,))
     diskThread = threading.Thread(target=monitor_disk)
-    #icmpThread.start()
+    icmpThread.start()
     diskThread.start()
 
-    #icmpThread.join()
-    diskThread.join()
+    try:
+        icmpThread.join()
+        diskThread.join()
+    except KeyboardInterrupt:
+        print("\nExiting main thread, program killed")
+        sys.exit(0)
