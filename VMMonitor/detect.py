@@ -38,12 +38,14 @@ def monitor_icmp(interface):
 def monitor_disk():
     while(True):
         time.sleep(10) # Sleep
-        usage = psutil.disk_usage('/') # Check for disk usage from /
+        usage = psutil.disk_usage('/tmp') # Check for disk usage from /
+        
         log_event('VMMonitorDB', "Disk", f"Disk usage: {usage.percent}%") # Log disk usage
-        #print(f"Disk usage: {usage.percent}%")
+        print(f"Disk usage: {usage.percent}%")
+
         if usage.percent > 95: # If the disk usage is unusually high
             log_event('VMMonitorDB', "Mitigation", "Disk usage exceeded 95%") # Log it
-            #print("Mitigation", "Disk usage exceeded 95%")
+            print("Mitigation", "Disk usage exceeded 95%")
             cleanup_disk("/tmp") # Clean temp file
 
 def thread_and_run(interface):

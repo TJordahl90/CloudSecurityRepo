@@ -13,4 +13,4 @@ def restart_container(name):
     container.restart()
 
 def cleanup_disk(path="/tmp"):
-    subprocess.run(["sudo", "rm", "-rf", f"{path}/*"])
+    subprocess.run(f"sudo rm -rf {path}/*", shell=True)
